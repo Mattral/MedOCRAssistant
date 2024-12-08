@@ -6,6 +6,7 @@ import random
 import time
 from PIL import Image
 import pdfplumber  # pdfplumber for PDF extraction
+from io import BytesIO
 
 # Initialize EasyOCR and Huggingface InferenceClient
 reader = easyocr.Reader(['en'])
@@ -97,6 +98,16 @@ def process_image_or_pdf(uploaded_file):
         st.subheader("Extracted Text from Image: (please wait for AI to analyze it)")
         st.text(extracted_text)
 
+        # Convert image to byte format for Streamlit to display
+        try:
+            img_byte_arr = BytesIO()
+            image.save(img_byte_arr, format='PNG')
+            img_byte_arr = img_byte_arr.getvalue()
+
+            st.image(img_byte_arr, caption='Uploaded Image', use_container_width=True)
+        except Exception as e:
+            st.error(f"Error displaying image: {e}")
+
     elif uploaded_file.type == "application/pdf":
         # Process PDF
         extracted_text = extract_text_from_pdf(uploaded_file)
@@ -117,11 +128,6 @@ def process_image_or_pdf(uploaded_file):
             <p style="color: white; word-wrap: break-word; max-width: 700px; margin: 0; font-size: 18px;">{ai_response}</p>
         </div>
     """, unsafe_allow_html=True)
-
-    # Display image if it's an image file
-    if uploaded_file.type in ["image/png", "image/jpeg", "image/jpg"]:
-        st.subheader("Original Image:")
-        st.image(image, caption='Uploaded Image', use_container_width=True)
 
     return history, extracted_text
 
