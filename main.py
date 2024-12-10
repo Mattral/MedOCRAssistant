@@ -7,6 +7,7 @@ import time
 from PIL import Image
 import pdfplumber  # pdfplumber for PDF extraction
 from io import BytesIO
+from googletrans import Translator  # For translation
 
 # Initialize EasyOCR and Huggingface InferenceClient
 reader = easyocr.Reader(['en'])
@@ -131,6 +132,19 @@ def process_image_or_pdf(uploaded_file):
 
     return history, extracted_text
 
+# Translate text to Hawaiian using googletrans
+def translate_to_hawaiian(text):
+    translator = Translator()
+    
+    # Detect the language of the input text
+    detected_language = translator.detect(text).lang
+    st.write(f"Detected Language: {detected_language}")
+    
+    # Translate the text from the detected language to Hawaiian
+    translated = translator.translate(text, src=detected_language, dest='haw')
+    
+    return translated.text
+
 # Main page with Streamlit interface
 def contributors_page():
     st.balloons()
@@ -158,6 +172,14 @@ def contributors_page():
                     <p style="color: white; word-wrap: break-word; max-width: 700px; margin: 0; font-size: 18px;">{ai_response}</p>
                 </div>
             """, unsafe_allow_html=True)
+
+        # Translate to Hawaiian button
+        if st.button("Translate to Hawaiian"):
+            if extracted_text:
+                hawaiian_translation = translate_to_hawaiian(extracted_text)
+                st.write(f"Translation in Hawaiian: {hawaiian_translation}")
+            else:
+                st.write("No text to translate. Please upload a document or enter some text.")
 
 # Run the Streamlit app
 if __name__ == "__main__":
