@@ -3,7 +3,6 @@ import easyocr
 import numpy as np
 from huggingface_hub import InferenceClient
 import random
-import time
 from PIL import Image
 import pdfplumber  # pdfplumber for PDF extraction
 from io import BytesIO
@@ -24,7 +23,7 @@ system_prompt_text = (
 def get_medical_ai_response(ocr_text, history=None):
     if history is None:
         history = []
-    prompt = f"This information is the OCR extracted from Medical Document or Report: {ocr_text}\n\nPlease identify if this is medical related, if it is medical, explain in details but if it's not, provide a summary of the content in less than 50 words."
+    prompt = f"This information is the OCR extracted from Medical Document or Report: {ocr_text}\n\nPlease identify if this is medical related, if it is medical explain in details and if it's not, provide a summary of the content in less than 50 words."
     
     # Send the OCR text to the AI model
     history, output = chat_inf(prompt, history, random.randint(1, 1111111111111111), 0.9, 3840, 0.9, 1.0)
@@ -114,13 +113,23 @@ def process_image_or_pdf(uploaded_file):
         extracted_text = extract_text_from_pdf(uploaded_file)
 
         # Display extracted text and send to AI
-        st.subheader("Analysis from PDF file:")
+        st.subheader("Extracted Text from PDF:")
         st.text(extracted_text)
 
     else:
         st.error("Invalid file format. Please upload an image or PDF.")
 
-    return extracted_text
+    # Get AI response based on the extracted text
+    ai_response, history = get_medical_ai_response(extracted_text)
+    
+    # Display AI response with a black background and white text
+    st.markdown(f"""
+        <div style="background-color: black; padding: 20px; border-radius: 10px;">
+            <p style="color: white; word-wrap: break-word; max-width: 700px; margin: 0; font-size: 18px;">{ai_response}</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    return history, extracted_text, ai_response
 
 # Translate text to Hawaiian using googletrans
 def translate_to_hawaiian(text):
@@ -145,18 +154,23 @@ def contributors_page():
     uploaded_file = st.file_uploader("Upload an Image or PDF", type=['png', 'jpg', 'jpeg', 'pdf'])
 
     if uploaded_file is not None:
-        # Process the uploaded file and get the extracted text
-        extracted_text = process_image_or_pdf(uploaded_file)
+        # Process the uploaded file and get the AI response, history, and extracted text
+        history, extracted_text, ai_response = process_image_or_pdf(uploaded_file)
 
-        # Get AI response based on the extracted text
-        ai_response, history = get_medical_ai_response(extracted_text)
+        # Ask for follow-up question from the user
+        follow_up_question = st.text_input("Ask a follow-up question:")
 
-        # Display AI response with a black background and white text
-        st.markdown(f"""
-            <div style="background-color: black; padding: 20px; border-radius: 10px;">
-                <p style="color: white; word-wrap: break-word; max-width: 700px; margin: 0; font-size: 18px;">{ai_response}</p>
-            </div>
-        """, unsafe_allow_html=True)
+        if follow_up_question:
+            # Combine the follow-up question with the history to maintain context
+            follow_up_prompt = f"Based on the information: {extracted_text}\nUser's follow-up question: {follow_up_question}"
+            ai_response, history = get_medical_ai_response(follow_up_prompt, history)
+
+            # Display AI response to the follow-up question
+            st.markdown(f"""
+                <div style="background-color: black; padding: 20px; border-radius: 10px;">
+                    <p style="color: white; word-wrap: break-word; max-width: 700px; margin: 0; font-size: 18px;">{ai_response}</p>
+                </div>
+            """, unsafe_allow_html=True)
 
         # Translate to Hawaiian button
         if st.button("Translate LLM Response to Hawaiian"):
