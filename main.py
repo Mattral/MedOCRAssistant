@@ -23,7 +23,7 @@ system_prompt_text = (
 def get_medical_ai_response(ocr_text, history=None):
     if history is None:
         history = []
-    prompt = f"This information is the OCR extracted from Medical Document or Report: {ocr_text}\n\nPlease identify if this is medical related, if it is medical explain in details and if it's not, provide a summary of the content in less than 50 words."
+    prompt = f"This information is the OCR extracted from Medical Document or Report: {ocr_text}\n\nPlease identify if this is medical related, if it is medical, explain in details and if it's not, provide a summary of the content in less than 50 words."
     
     # Send the OCR text to the AI model
     history, output = chat_inf(prompt, history, random.randint(1, 1111111111111111), 0.9, 3840, 0.9, 1.0)
@@ -95,8 +95,7 @@ def process_image_or_pdf(uploaded_file):
             extracted_text += detection[1] + "\n"
 
         # Display extracted text and send to AI
-        st.subheader("Extracted Text from Image: (please wait for AI to analyze it)")
-        st.text(extracted_text)
+        st.subheader("Fininshed Text Extraction from Image: (please wait to analyze it)")
 
         # Convert image to byte format for Streamlit to display
         try:
@@ -113,7 +112,7 @@ def process_image_or_pdf(uploaded_file):
         extracted_text = extract_text_from_pdf(uploaded_file)
 
         # Display extracted text and send to AI
-        st.subheader("Extracted Text from PDF:")
+        st.subheader("Analysis from uploaded file:")
         st.text(extracted_text)
 
     else:
@@ -173,7 +172,7 @@ def contributors_page():
             """, unsafe_allow_html=True)
 
         # Translate to Hawaiian button
-        if st.button("Translate LLM Response to Hawaiian"):
+        if st.button("Translate to Hawaiian"):
             if ai_response:
                 hawaiian_translation = translate_to_hawaiian(ai_response)
                 st.write(f"Translation in Hawaiian: {hawaiian_translation}")
